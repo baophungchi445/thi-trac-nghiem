@@ -1,5 +1,6 @@
 ﻿import { giaoDucChinhTriQuestions } from "./hoc-ki-1/giao-duc-chinh-tri";
 import { phapLuatQuestions } from "./hoc-ki-1/phap-luat";
+import { tiengAnhQuestions } from "./hoc-ki-1/tieng-anh";
 import { tinHocQuestions } from "./hoc-ki-1/tin-hoc";
 
 export type { AnswerKey, Question, Subject, Semester } from "./types";
@@ -29,7 +30,15 @@ export const SEMESTERS = [
         icon: "💻",
         count: tinHocQuestions.length,
         questions: tinHocQuestions
+      },
+      {
+        id: "tieng-anh",
+        label: "Tiếng Anh",
+        icon: "🗣️",
+        count: tiengAnhQuestions.length,
+        questions: tiengAnhQuestions
       }
+       
     ]
   }
 ];
