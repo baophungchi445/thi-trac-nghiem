@@ -14,3 +14,9 @@ export type Subject = {
   count: number;
   questions: Question[];
 };
+
+export type Semester = {
+  id: string;
+  label: string;
+  subjects: Subject[];
+};
