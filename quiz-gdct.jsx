@@ -22,7 +22,19 @@ function WordDocViewer({ url }) {
             ignoreWidth: true,
           });
         })
-        .then(() => { if (!cancelled) setLoading(false); })
+        .then(() => {
+          if (cancelled) return;
+          // Đổi tất cả màu nền highlight trong Word sang #00FF00
+          if (containerRef.current) {
+            containerRef.current.querySelectorAll("[style]").forEach(el => {
+              if (!el.style.backgroundColor) return;
+              const computed = window.getComputedStyle(el).backgroundColor;
+              if (!computed || computed === "transparent" || computed === "rgba(0, 0, 0, 0)") return;
+              el.style.backgroundColor = "#00FF00";
+            });
+          }
+          setLoading(false);
+        })
         .catch(err => { if (!cancelled) { setError(err.message); setLoading(false); } });
     });
     return () => { cancelled = true; };
