@@ -1,5 +1,50 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { SUBJECTS, SEMESTERS } from "./mon-hoc";
+
+function WordDocViewer({ url }) {
+  const containerRef = useRef(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (!url || !containerRef.current) return;
+    setLoading(true);
+    setError(null);
+    let cancelled = false;
+    import("docx-preview").then(({ renderAsync }) => {
+      fetch(url)
+        .then(r => { if (!r.ok) throw new Error("Không tìm thấy file"); return r.blob(); })
+        .then(blob => {
+          if (cancelled) return;
+          if (containerRef.current) containerRef.current.innerHTML = "";
+          return renderAsync(blob, containerRef.current, null, {
+            inWrapper: false,
+            ignoreWidth: true,
+          });
+        })
+        .then(() => { if (!cancelled) setLoading(false); })
+        .catch(err => { if (!cancelled) { setError(err.message); setLoading(false); } });
+    });
+    return () => { cancelled = true; };
+  }, [url]);
+
+  return (
+    <div className="word-viewer-wrap">
+      {loading && !error && (
+        <div className="word-loading">
+          <span className="word-loading-spin">⏳</span> Đang tải tài liệu...
+        </div>
+      )}
+      {error && (
+        <div className="word-empty">
+          <div style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>⚠️</div>
+          <div>{error}</div>
+        </div>
+      )}
+      <div ref={containerRef} className="word-viewer-body" />
+    </div>
+  );
+}
 
 function getSubjectIdFromPath() {
   if (typeof window === "undefined") return null;
@@ -146,6 +191,11 @@ export default function QuizApp() {
   const progressPct = questions.length
     ? (answeredCount / questions.length) * 100
     : 0;
+
+  const WORD_FILES = ["giao-duc-chinh-tri", "phap-luat", "tin-hoc"];
+  const wordFileUrl = WORD_FILES.includes(selectedSubject) && selectedSemester
+    ? `/${selectedSemester}/${selectedSubject}.docx`
+    : null;
 
   return (
     <>
@@ -390,7 +440,7 @@ export default function QuizApp() {
         }
         .subject-page-header {
           padding: 5rem 1.5rem 0;
-          max-width: 820px;
+          max-width: 1200px;
           width: 100%;
           margin: 0 auto;
         }
@@ -413,7 +463,7 @@ export default function QuizApp() {
           display: flex;
           border-bottom: 1px solid rgba(255,255,255,0.08);
           gap: 0;
-          max-width: 820px;
+          max-width: 1200px;
           width: 100%;
           margin: 0 auto;
           padding: 0 1.5rem;
@@ -441,7 +491,7 @@ export default function QuizApp() {
         }
         .tab-content {
           flex: 1;
-          max-width: 820px;
+          max-width: 1200px;
           width: 100%;
           margin: 0 auto;
           padding: 1.5rem 1.5rem 3rem;
@@ -1262,6 +1312,52 @@ export default function QuizApp() {
           color: #172033;
         }
 
+        /* WORD TAB */
+        .word-wrapper {
+          padding: 1rem 0;
+        }
+        .word-viewer-wrap {
+          position: relative;
+          min-height: 200px;
+        }
+        .word-loading {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.6rem;
+          padding: 3rem 1rem;
+          color: #7a8499;
+          font-size: 0.9rem;
+        }
+        .word-loading-spin {
+          animation: spin 1.2s linear infinite;
+          display: inline-block;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .word-empty {
+          color: #5a6480;
+          font-size: 0.9rem;
+          text-align: center;
+          padding: 3rem 1rem;
+        }
+        .word-viewer-body {
+          background: #fff;
+          border-radius: 12px;
+          overflow: hidden;
+          padding: 0.5rem;
+          box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+        }
+        .word-viewer-body section {
+          min-height: unset !important;
+          box-shadow: none !important;
+          margin: 0 !important;
+          padding: 1.5rem 2rem !important;
+        }
+        .theme-light .word-empty { color: #94a3b8; }
+        .theme-light .word-viewer-body {
+          box-shadow: 0 4px 24px rgba(15,23,42,0.12);
+        }
+
         @media (min-width: 640px) {
           .home-title { font-size: 3rem; }
         }
@@ -1352,6 +1448,12 @@ export default function QuizApp() {
                 📖 Học
               </button>
               <button
+                className={`tab-btn ${subjectTab === "word" ? "active-tab" : ""}`}
+                onClick={() => setSubjectTab("word")}
+              >
+                📄 File Word
+              </button>
+              <button
                 className={`tab-btn ${subjectTab === "thi-thu" ? "active-tab" : ""}`}
                 onClick={() => setSubjectTab("thi-thu")}
               >
@@ -1425,6 +1527,19 @@ export default function QuizApp() {
                   <button className="thi-thu-start-btn" onClick={startQuiz}>
                     Bắt đầu thi thử →
                   </button>
+                </div>
+              )}
+
+              {subjectTab === "word" && (
+                <div className="word-wrapper">
+                  {wordFileUrl ? (
+                    <WordDocViewer url={wordFileUrl} />
+                  ) : (
+                    <div className="word-empty">
+                      <div style={{ fontSize: "2.5rem", marginBottom: "0.75rem" }}>📭</div>
+                      <div>Chưa có file Word cho môn học này</div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
